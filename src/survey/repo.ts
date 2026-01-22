@@ -17,6 +17,17 @@ function uuid() {
   return `tok_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 }
 
+type QueuedEmail = {
+  id: string;
+  to: string;
+  subject: string;
+  body: string;
+  token: string;
+  createdAt: number;
+};
+
+const emails: QueuedEmail[] = [];
+
 type ModelOps = {
   findFirst: (args: unknown) => Promise<unknown>;
   create?: (args: unknown) => Promise<unknown>;
@@ -150,4 +161,27 @@ export async function listAll() {
   } catch {
     return mem.map((r) => ({ id: r.id, createdAt: r.createdAt, data: r.data }));
   }
+}
+
+export function queueResumeEmail(to: string, token: string) {
+  const id = `mail_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+  const resumeUrl = `/survey?token=${token}`;
+  const subject = "Your survey resume link";
+  const body = `Resume your survey here: ${resumeUrl}`;
+  emails.push({ id, to, subject, body, token, createdAt: Date.now() });
+  getServerUser()
+    .then((user) => {
+      try {
+        const audit = getModel("auditLog");
+        return audit?.create?.({ data: { userId: user?.id ?? null, action: "email_queued", entity: "SurveyResponse", entityId: token, diff: { to, subject } } });
+      } catch {
+        return null;
+      }
+    })
+    .catch(() => null);
+  return { id };
+}
+
+export function listQueuedEmails() {
+  return emails.slice();
 }

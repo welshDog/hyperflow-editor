@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const isTest = process.env.NODE_ENV === "test";
+const isProd = process.env.NODE_ENV === "production";
 
 const EnvSchema = z.object({
   DATABASE_URL: isTest ? z.string().min(1) : z.string().url(),
@@ -9,9 +10,12 @@ const EnvSchema = z.object({
 });
 
 export const env = EnvSchema.parse({
-  DATABASE_URL: process.env.DATABASE_URL ?? (isTest ? "postgresql://user:pass@localhost:5432/db" : undefined),
-  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? (isTest ? "https://project.supabase.co" : undefined),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? (isTest ? "test-key" : undefined),
+  DATABASE_URL:
+    process.env.DATABASE_URL ?? (isProd ? undefined : "postgresql://user:pass@localhost:5432/db"),
+  NEXT_PUBLIC_SUPABASE_URL:
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? (isProd ? undefined : "https://project.supabase.co"),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY:
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? (isProd ? undefined : "test-key"),
 });
 
 const HyperSchema = z.object({

@@ -1,7 +1,7 @@
 "use server";
 
 import { SurveyResponseSchema } from "@/survey/zod";
-import { createPartial, loadByToken, submitByToken, upsertPartial, listAll } from "@/survey/repo";
+import { createPartial, loadByToken, submitByToken, upsertPartial, listAll, queueResumeEmail } from "@/survey/repo";
 
 export async function submitSurveyResponse(payload: unknown) {
   const parsed = SurveyResponseSchema.safeParse(payload);
@@ -33,4 +33,9 @@ export async function savePartialByToken(token: string, patch: Record<string, un
 export async function listSurveyResponses() {
   const rows = await listAll();
   return rows;
+}
+
+export async function sendResumeEmail(token: string, to: string) {
+  const { id } = queueResumeEmail(to, token);
+  return { ok: true, id };
 }

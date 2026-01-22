@@ -24,6 +24,7 @@ export default function SurveyForm({ token }: { token?: string }) {
   const [submitOk, setSubmitOk] = useState<string | null>(null);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const [resumeToken, setResumeToken] = useState<string | null>(token ?? null);
+  const [emailQueuedTo, setEmailQueuedTo] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -64,7 +65,7 @@ export default function SurveyForm({ token }: { token?: string }) {
   }
 
   async function onSaveResume() {
-    const { createSurveyToken, savePartialByToken } = await import("@/app/actions/survey");
+    const { createSurveyToken, savePartialByToken, sendResumeEmail } = await import("@/app/actions/survey");
     let tok = resumeToken;
     if (!tok) {
       const res = await createSurveyToken(form);
@@ -73,6 +74,12 @@ export default function SurveyForm({ token }: { token?: string }) {
     if (tok) {
       await savePartialByToken(tok, form);
       setResumeToken(tok);
+      const contact = (form["followup_contact"] as string) ?? "";
+      const looksEmail = typeof contact === "string" && contact.includes("@") && contact.includes(".");
+      if (looksEmail) {
+        await sendResumeEmail(tok, contact);
+        setEmailQueuedTo(contact);
+      }
     }
   }
 
@@ -183,6 +190,9 @@ export default function SurveyForm({ token }: { token?: string }) {
         {submitErr && <p className="mt-3 text-red-600">{submitErr}</p>}
         {resumeToken && (
           <p className="mt-3 text-neutral-700">Resume link: <a className="text-blue-700" href={`/survey?token=${resumeToken}`}>/survey?token={resumeToken}</a></p>
+        )}
+        {emailQueuedTo && (
+          <p className="mt-1 text-neutral-700">Email queued to: {emailQueuedTo}</p>
         )}
       </form>
     </div>
